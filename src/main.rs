@@ -22,25 +22,25 @@ async fn main() {
 
             let msg = format!("{:?} has has entered the chat\r\n", addr);
             print!("{}", msg);
-            tx.send((addr, msg.clone())).unwrap();
+            tx.send((addr, msg)).unwrap();
 
             loop {
                 tokio::select! {
                     result = reader.read_line(&mut line) => {
                         let num_bytes = result.unwrap();
-                        if num_bytes == 2 {
+                        if num_bytes <= 2 {
                             let msg = format!("{:?} has left the chat\r\n", addr);
                             print!("{}", msg);
-                            tx.send((addr, msg.clone())).unwrap();
+                            tx.send((addr, msg)).unwrap();
                             break;
                         }
                         let msg = format!("{:?}: {}\r\n", addr, line.trim());
                         print!("{}", msg);
-                        tx.send((addr, msg.clone())).unwrap();
+                        tx.send((addr, msg)).unwrap();
                         line.clear();
                     }
                     result = rx.recv() => {
-                        let (other_addr, msg) = result.unwrap().clone();
+                        let (other_addr, msg) = result.unwrap();
                         if addr != other_addr {
                             writer.write_all(msg.as_bytes()).await.unwrap();
                         }
