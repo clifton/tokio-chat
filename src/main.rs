@@ -27,16 +27,23 @@ async fn main() {
             loop {
                 tokio::select! {
                     result = reader.read_line(&mut line) => {
-                        let num_bytes = result.unwrap();
-                        if num_bytes <= 2 {
-                            let msg = format!("{:?} has left the chat\r\n", addr);
-                            print!("{}", msg);
-                            tx.send((addr, msg)).unwrap();
-                            break;
+                        match result {
+                            Ok(0..=2) => {
+                                let msg = format!("{:?} has left the chat\r\n", addr);
+                                print!("{}", msg);
+                                tx.send((addr, msg)).unwrap();
+                                break;
+                            }
+                            Ok(_) => {
+                                let msg = format!("{:?}: {}\r\n", addr, line.trim());
+                                print!("{}", msg);
+                                tx.send((addr, msg)).unwrap();
+                            }
+                            Err(error) => {
+                                print!("error: {:?}", error);
+                                break;
+                            }
                         }
-                        let msg = format!("{:?}: {}\r\n", addr, line.trim());
-                        print!("{}", msg);
-                        tx.send((addr, msg)).unwrap();
                         line.clear();
                     }
                     result = rx.recv() => {
